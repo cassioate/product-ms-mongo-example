@@ -3,10 +3,12 @@ package br.com.tessaro.repository.custom;
 import java.math.BigDecimal;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+
 import org.springframework.stereotype.Repository;
 
 import br.com.tessaro.domain.Product;
@@ -15,42 +17,31 @@ import br.com.tessaro.domain.Product;
 public class ProductsCustomRepository {
 
 	@Autowired
-	private EntityManager em;
+	private MongoTemplate mongoTemplate;
 
 	@SuppressWarnings("unchecked")
 	public List<Product> findProductsByFilter(String nameOrDescription, BigDecimal minPrice, BigDecimal maxPrice) {
-		StringBuilder queryBuilder = new StringBuilder("SELECT P.* FROM TB_Product p ");
-		String param = "WHERE ";
+		Query mongoQuery = new Query();
 
 		if (nameOrDescription != null) {
-			queryBuilder.append(param).append("(p.name = :nameOrDescription OR p.description = :nameOrDescription) ");
-			param = "AND ";
+			mongoQuery.addCriteria(Criteria.where("").orOperator(
+					Criteria.where("name").is(nameOrDescription),
+					Criteria.where("description").is(nameOrDescription)));
 		};
 
-		if (minPrice != null) {
-			queryBuilder.append(param).append("p.price >= :minPrice ");
-			param = "AND ";
+		if (minPrice != null && maxPrice == null) {
+			mongoQuery.addCriteria(Criteria.where("price").gte(minPrice));
 		};
 
-		if (maxPrice != null) {
-			queryBuilder.append(param).append("p.price <= :maxPrice ");
-			param = "AND ";
+		if (maxPrice != null && minPrice == null) {
+			mongoQuery.addCriteria(Criteria.where("price").lte(maxPrice));
 		};
 
-		Query entityManagerQuery = em.createNativeQuery(queryBuilder.toString(), Product.class);
+		if (maxPrice != null && minPrice != null) {
+			//O ocorreu um conflito na conversão do BigDecimal para o Decimal do mongoDb, de forma que foi necessario converter para doubleValue para a query funcionar
+			mongoQuery.addCriteria(Criteria.where("price").gte(minPrice.doubleValue()).lte(maxPrice.doubleValue()));
+		}
 
-		if (nameOrDescription != null) {
-			entityManagerQuery.setParameter("nameOrDescription", nameOrDescription);
-		};
-
-		if (minPrice != null) {
-			entityManagerQuery.setParameter("minPrice", minPrice);
-		};
-
-		if (maxPrice != null) {
-			entityManagerQuery.setParameter("maxPrice", maxPrice);
-		};
-
-		return entityManagerQuery.getResultList();
+		return mongoTemplate.find(mongoQuery, Product.class);
 	}
 }

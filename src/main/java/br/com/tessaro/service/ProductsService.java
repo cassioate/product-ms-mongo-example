@@ -22,6 +22,7 @@ public interface ProductsService {
 	public ProductDTO getProductById(String id);
 	
 	public void deleteProductById(String id);
-	
+
+	public List<ProductDTO> getProductsByExample(String q, BigDecimal price);
 
 }

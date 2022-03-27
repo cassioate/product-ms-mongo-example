@@ -67,10 +67,21 @@ public class ProductsController {
 		ProductDTO productResponse = productsService.getProductById(id);
 		return ResponseEntity.status(HttpStatus.OK).body(productResponse);
 	}
+
+	@GetMapping("/search/example")
+	@ApiOperation(value = "List of all products with name, description and price")
+	@Cacheable(value="retrieveExcahngeValueCache")
+	public ResponseEntity<List<ProductDTO>> getProductsByExample (
+			@RequestParam(required = false, value = "price") BigDecimal price,
+			@RequestParam(required = false, value = "q") String q) {
+		logger.info("CONTROLLER - Using the getProductsByExample method");
+		List<ProductDTO> productResponse = productsService.getProductsByExample(q, price);
+		return ResponseEntity.status(HttpStatus.OK).body(productResponse);
+	}
 	
 	@GetMapping("/search")
 	@ApiOperation(value = "List of all products in the filter range")
-	@Cacheable(value="retrieveExcahngeValueCache")
+//	@Cacheable(value="retrieveExcahngeValueCache")
 	public ResponseEntity<List<ProductDTO>> getFilterProducts (
 			@RequestParam(required = false, value = "min_price") BigDecimal minPrice,
 			@RequestParam(required = false, value = "max_price") BigDecimal maxPrice,

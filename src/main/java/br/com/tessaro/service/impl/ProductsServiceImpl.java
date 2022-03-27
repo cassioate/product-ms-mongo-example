@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
@@ -68,6 +69,21 @@ public class ProductsServiceImpl implements ProductsService{
 		ProductDTO productDto = new ProductDTO();
 		BeanUtils.copyProperties(product, productDto);
 		return productDto;
+	}
+
+	@Override
+	public List<ProductDTO> getProductsByExample(String q, BigDecimal price) {
+		logger.info("SERVICE - Using the getProductsByExample method");
+
+		Example<Product> example = Example.of(new Product(q, q, price));
+		List<ProductDTO> productsDto = productRepository.findAll(example)
+				.stream().
+						map(obj -> {
+							ProductDTO productDto = new ProductDTO();
+							BeanUtils.copyProperties(obj, productDto);
+							return productDto;
+						}).collect(Collectors.toList());
+		return productsDto;
 	}
 
 	@Override
